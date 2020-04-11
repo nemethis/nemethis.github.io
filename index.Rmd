@@ -11,7 +11,7 @@ When you have kids in quarantine you will know why. You have - OK, so you know.
 
 Data used in these analyses is publicly available at ECDC site [here](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv).
 
-Actual content may change over time as global COVID-19 situation develops over time.
+Actual content may change over time as global COVID-19 situation develops ~~over time~~.
 ```{r env, echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(nlme)
