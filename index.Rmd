@@ -1,0 +1,124 @@
+---
+title: "COVID-19"
+author: "Istvan Nemeth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Introduction
+
+In the analyses to come, there are many weaknesses. The weakness of data; case reporting policies change from country to country -- lucky if not within country. The weakness of assumptions.  1) Transmission dynamics do not change over the course of epidemic (this obviusly does not hold as governments in their way to stop it, make up new ideas every day and legislate on the other). 2) The underlying math model is simple. This is a plain density function of a normal distribution. Plus a scale parameter. You can not tweak easily like changes in social distancing, or season, or whatever may affect the spread of COVID-19 in it. This is not a sonet; this is a troll. But like every troll, it is effective and lazy. Moreover, I do not feel like chasing after governments COVID-19 regulations and time it become effective, as an entry level of building a non-troll, subtle model. When you have kids in quarantine you will know why. You have - ok, so you know.  
+
+Data used in these analyses is publicly available at ECDC site [here](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv).
+
+Actual content may change over time as global COVID-19 situation develops over time.
+```{r env, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(nlme)
+library(countrycode)
+```
+
+```{r auxils, echo=FALSE}
+Ch2DateD <- function(x) as.Date(x, format="%d/%m/%Y", origin="1970-01-01")
+Ch2DateN <- function(x) as.numeric(Ch2DateD(x))
+Nm2DateD <- function(x) as.Date(x, origin="1970-01-01")
+
+epiFun <- function(x,mean,sd,scale) {dnorm(x,mean,sd) * scale}
+
+RepFun <- function(ccd, mid, std, scale){
+  Result <- vector(mode = "list")
+  Result$InData <- subset(covid19,iso3c == ccd )
+  Result$Model <- nls(cases ~ epiFun(DateN,mid,std,scale),
+                 data = Result$InData,
+                 start = c(mid=mid,
+                           std=std,
+                           scale=scale))
+  Coefs <- coef(Result$Model)
+  x1 <- min(Result$InData$DateN)
+  x2 <- Coefs[1] + Coefs[2] * 5
+  Result$PredData <- within(data.frame(DateN = seq(x1,x2,1)),{
+    pred = predict(Result$Model,newdata=list(DateN=DateN))
+    DateD = Nm2DateD(DateN)
+  })
+  caseslt10d = min(subset(Result$PredData, DateN > Coefs[1] & pred <= 10)$DateN)
+  Result$Metrics <- c(cases2date = as.character(sum(Result$InData$cases)),
+                      casestotal = as.character(ceiling(Coefs[3])),
+                      caseslt10d = as.character(Nm2DateD(caseslt10d)))
+
+  return(Result)
+}
+
+PlotFun <- function(x){
+  PredData <- x$PredData
+  InData <- x$InData
+  gp <- ggplot(data = PredData, mapping = aes(x= DateD, y= pred))
+  gp <- gp + geom_col(data = InData, aes(x=DateD, y=cases))
+  gp <- gp + geom_line(colour="blue", size=1) 
+  gp <- gp + xlab("Date") + ylab("Cases/Day")
+  gp + scale_x_date(date_breaks="month", date_labels = "%b/%Y")
+}
+
+```
+
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+infile  <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
+
+covid19 <- read.csv(infile, stringsAsFactors = FALSE)
+covid19 <- within(covid19,{
+  DateD = Ch2DateD(dateRep)
+  DateN = Ch2DateN(dateRep)
+  iso3c = countryterritoryCode
+  country = countriesAndTerritories
+  eu28 = countrycode(iso3c,origin="iso3c",destination="eu28")
+})
+
+```
+
+```{r echo=FALSE}
+
+ITA <- RepFun(ccd="ITA", 18350, 5, 140000)
+DEU <- RepFun(ccd="DEU", 18350, 5, 140000)
+GBR <- RepFun(ccd="GBR", 18360, 10, 105000)
+ESP <- RepFun(ccd="ESP", 18353, 10, 190000)
+
+```
+
+# Italy
+
+- Cases to date: `r ITA$Metrics["cases2date"]`
+- Total cases estimated: `r ITA$Metrics["casestotal"]`
+- Date after cases/day is expeted to be less then 10: `r ITA$Metrics["caseslt10d"]`
+
+```{r echo=FALSE}
+PlotFun(ITA)
+```
+
+# Germany
+
+- Cases to date: `r DEU$Metrics["cases2date"]`
+- Total cases estimated: `r DEU$Metrics["casestotal"]`
+- Date after cases/day is expeted to be less then 10: `r DEU$Metrics["caseslt10d"]`
+
+```{r echo=FALSE}
+PlotFun(DEU)
+```
+
+# UK
+
+- Cases to date: `r GBR$Metrics["cases2date"]`
+- Total cases estimated: `r GBR$Metrics["casestotal"]`
+- Date after cases/day is expeted to be less then 10: `r GBR$Metrics["caseslt10d"]`
+
+```{r echo=FALSE}
+PlotFun(GBR)
+```
+
+# Spain
+
+- Cases to date: `r ESP$Metrics["cases2date"]`
+- Total cases estimated: `r ESP$Metrics["casestotal"]`
+- Date after cases/day is expeted to be less then 10: `r ESP$Metrics["caseslt10d"]`
+
+```{r echo=FALSE}
+PlotFun(ESP)
+```
