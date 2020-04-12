@@ -81,7 +81,7 @@ ITA <- RepFun(ccd="ITA", 18350, 5, 140000)
 DEU <- RepFun(ccd="DEU", 18350, 5, 140000)
 GBR <- RepFun(ccd="GBR", 18360, 10, 105000)
 ESP <- RepFun(ccd="ESP", 18353, 10, 190000)
-
+USA <- RepFun(ccd="USA", 18360, 10, 650000)
 ```
 
 # Italy
@@ -123,3 +123,12 @@ PlotFun(GBR)
 ```{r echo=FALSE}
 PlotFun(ESP)
 ```
+
+# USA
+
+- Cases to date: `r USA$Metrics["cases2date"]`
+- Total cases estimated: `r USA$Metrics["casestotal"]`
+- Date after cases/day is expeted to be less then 10: `r USA$Metrics["caseslt10d"]`
+
+```{r echo=FALSE}
+PlotFun(USA)
