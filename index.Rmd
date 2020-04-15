@@ -23,16 +23,17 @@ Ch2DateD <- function(x) as.Date(x, format="%d/%m/%Y", origin="1970-01-01")
 Ch2DateN <- function(x) as.numeric(Ch2DateD(x))
 Nm2DateD <- function(x) as.Date(x, origin="1970-01-01")
 
-epiFun <- function(x,mean,sd,scale) {dnorm(x,mean,sd) * scale}
+epiNorm <- function(x,mean,sd,total) {dnorm(x,mean,sd) * total}
+epiWeib <- function(x,shape,scale,total) {dweibull(x,shape,scale) * total}
 
-RepFun <- function(ccd, mid, std, scale){
+RepFun <- function(ccd, mid, std, total){
   Result <- vector(mode = "list")
   Result$InData <- subset(covid19,iso3c == ccd )
-  Result$Model <- nls(cases ~ epiFun(DateN,mid,std,scale),
+  Result$Model <- nls(cases ~ epiNorm(DateN,mid,std,total),
                  data = Result$InData,
                  start = c(mid=mid,
                            std=std,
-                           scale=scale))
+                           total=total))
   Coefs <- coef(Result$Model)
   x1 <- min(Result$InData$DateN)
   x2 <- Coefs[1] + Coefs[2] * 5
@@ -76,12 +77,13 @@ covid19 <- within(covid19,{
 ```
 
 ```{r echo=FALSE}
+ccds <- c("ITA","DEU","GBR","ESP","USA")
 
-ITA <- RepFun(ccd="ITA", 18350, 5, 140000)
-DEU <- RepFun(ccd="DEU", 18350, 5, 140000)
-GBR <- RepFun(ccd="GBR", 18360, 10, 105000)
-ESP <- RepFun(ccd="ESP", 18353, 10, 190000)
-USA <- RepFun(ccd="USA", 18360, 10, 650000)
+ITA <- RepFun(ccd=ccds[1], 18350, 5, 140000)
+DEU <- RepFun(ccd=ccds[2], 18350, 5, 140000)
+GBR <- RepFun(ccd=ccds[3], 18360, 10, 105000)
+ESP <- RepFun(ccd=ccds[4], 18353, 10, 190000)
+USA <- RepFun(ccd=ccds[5], 18360, 10, 650000)
 ```
 
 # Italy
